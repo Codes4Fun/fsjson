@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Explore</title>
+<link rel="stylesheet" type="text/css" href="/libs/ui.css">
+<script src="/libs/ui.js"></script>
+<link rel="stylesheet" type="text/css" href="/libs/ui-listview-0.1.css">
+<script src="/libs/ui-listview-0.1.js"></script>
+
+<style>
+.folder-item-header {
+	cursor: default;
+}
+.folder-item {
+	cursor: default;
+}
+.folder-item:hover {
+	background-color:rgb(232,246,253);
+}
+.folder-item-selected {
+	background-color:rgb(210,238,252);
+	cursor: default;
+}
+</style>
+
+
+</head>
+<body class="app-body">
+
+<!table><!tbody id="container"><!/tbody><!/table>
+
+<div class="forscreen"></div>
+<div id="printable" class="forprinting"></div>
+<input id="uploadFile" type="file" style="display:none" multiple>
+
+<script>
+
+//var container = document.getElementById('container');
+
+var currentPath;
+var currentFolder;
+var selectedItems = [];
+var selectedItem = null;
+
+//location.pathname;
+function getPath()
+{
+	var path = location.hash.substr(1);
+	if (path == 'trashbin')
+	{
+		return path;
+	}
+	if (path[0] != '/')
+	{
+		path = '/' + path;
+	}
+	if (path[path.length-1] != '/')
+	{
+		path += '/';
+	}
+	return path;
+}
+
+function openDir(name)
+{
+	var path = getPath();
+	if (path != 'trashbin')
+	{
+		location.hash = path + name;
+	}
+}
+
+function openFile(name)
+{
+	var path = getPath();
+	if (path != 'trashbin')
+	{
+		//window.open(path + name);
+		location.href = path + name;
+	}
+}
+
+function fileExists(name)
+{
+	for (var i = 0; i < currentFolder.length; i++)
+	{
+		if (currentFolder[i].name == name)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+/*function nameComponents(name, isfolder)
+{
+	var comp = {};
+	var str = currentFolder[i].name;
+
+	// find, store, and remove extension
+	if (!isfolder)
+	{
+		var ext = str.lastIndexOf('.');
+		if (ext != -1)
+		{
+			comp.ext = str.substr(ext+1);
+			str = str.substr(0, ext);
+		}
+	}
+
+	// find, store, and remove counts
+	var end = str.length - 1;
+	if (str[end] == ')')
+	{
+		var start = str.lastIndexOf('(');
+		if (start != -1)
+		{
+			var nstr = str.substr(start+1, end-start-1);
+			if (!isNaN(nstr))
+			{
+				comp.count = parseInt(nstr);
+				comp.dupname = str.substr(0, start);
+				if (currentFolder[i].ext)
+				{
+					currentFolder[i].dupname += '.' + currentFolder[i].ext;
+				}
+			}
+		}
+	}
+}
+
+function addMeta()
+{
+	for (var i = 0; i < currentFolder.length; i++)
+	{
+		var str = currentFolder[i].name;
+
+		// find, store, and remove extension
+		if (currentFolder[i].type != 'directory')
+		{
+			var ext = str.lastIndexOf('.');
+			if (ext != -1)
+			{
+				currentFolder[i].ext = str.substr(ext+1);
+				str = str.substr(0, ext);
+			}
+		}
+
+		// find, store, and remove counts
+		var end = str.length - 1;
+		if (str[end] == ')')
+		{
+			var start = str.lastIndexOf('(');
+			if (start != -1)
+			{
+				var nstr = str.substr(start+1, end-start-1);
+				currentFolder[i].debug = [str, start, end, nstr];
+				if (!isNaN(nstr))
+				{
+					currentFolder[i].count = parseInt(nstr);
+					currentFolder[i].dupname = str.substr(0, start);
+					if (currentFolder[i].ext)
+					{
+						currentFolder[i].dupname += '.' + currentFolder[i].ext;
+					}
+				}
+			}
+		}
+	}
+}
+
+function createName(name)
+{
+	var conflict = false;
+	for (var i = 0; i < currentFolder.length; i++)
+	{
+		if (currentFolder[i].name == name)
+		{
+			conflict = true;
+			break;
+		}
+	}
+	if (!conflict)
+	{
+		return name;
+	}
+	for (var i = 0; i < currentFolder.length; i++)
+	{
+		if (currentFolder[i].dupname == name)
+		{
+			conflict = true;
+			break;
+		}
+	}
+}*/
+
+window.onhashchange = function ()
+{
+	//console.log('sending request!!!!!!!!!!');
+	var path = getPath();
+	console.log('sending request with ' + path);
+	req = new XMLHttpRequest();
+	if (path == 'trashbin')
+	{
+		req.open('GET', '/?trashbin', false);
+	}
+	else
+	{
+		req.open('GET', path + '?readdir', false);
+	}
+	req.send();
+	if (req.status != 200)
+	{
+		alert('unable to get directory "' + path + '"!');
+		return;
+	}
+	console.log(req.response);
+	//console.log('got response');
+	res = JSON.parse(req.response);
+	document.title = res.path;
+	//console.log('done parsing');
+
+	fileListView.setItems(res.contents);
+
+	currentPath = res.path;
+	currentFolder = res.contents;
+	//addMeta();
+	//console.log('done');
+}
+
+function uploadFiles(files, i, ondone)
+{
+	if (getPath() == 'trashbin')
+	{
+		if (ondone) ondone();
+		return;
+	}
+
+	if (i >= files.length)
+	{
+		if (ondone) ondone();
+		window.onhashchange();
+		return;
+	}
+	var reader = new FileReader();
+	reader.onload = function (e)
+	{
+		req = new XMLHttpRequest();
+		req.open('PUT', getPath() + files[i].name, false);
+		req.send(reader.result);
+		console.log(req.status + ' ' + req.statusText);
+		uploadFiles(files, i + 1, ondone);
+	}
+	reader.readAsArrayBuffer(files[i]);
+}
+
+var uploadFileElement = document.getElementById("uploadFile");
+uploadFileElement.onchange = function (e)
+{
+	uploadFiles(e.target.files, 0, function () { e.target.value = ''; });
+};
+
+function onSelectUploadFiles()
+{
+	console.log('upload?')
+	if (getPath() == 'trashbin')
+	{
+		if (ondone) ondone();
+		return;
+	}
+	console.trace();
+	uploadFileElement.click();
+}
+
+
+///////
+// Build the UI
+///////
+
+// About Dialog
+var aboutDialog = new ModalDialog("About fsjson Explore");
+aboutDialog.getContentArea().style.padding = '8px';
+aboutDialog.getContentArea().textContent = "fsjson Explore 1.0 [2015.08]";
+
+// New Folder Dialog
+var newFolder = true;
+var newItemDialog = new ModalDialog("New Item");
+//var newItemVBox = new VBox();
+var newItemHBox = new HBox();
+var newItemLabel = document.createElement('div');
+var newItemInput = document.createElement('input');
+var newItemButtonBar = new HBox();6
+var newItemOkay = document.createElement('button');
+var newItemCancel = document.createElement('button');
+
+newItemLabel.textContent = 'Name: ';
+newItemInput.type = 'text';
+newItemInput.value = 'NewItem';
+newItemOkay.textContent = 'Okay';
+newItemCancel.textContent = 'Cancel';
+
+newItemHBox.appendChild(newItemLabel);
+newItemHBox.appendChild(newItemInput);
+
+newItemButtonBar.appendChild(null, true);
+newItemButtonBar.appendChild(newItemOkay);
+newItemButtonBar.appendChild(newItemCancel);
+
+//newItemVBox.appendChild(newItemHBox);
+//newItemVBox.appendChild(newItemButtonBar);
+newItemDialog.getContentArea().appendChild(newItemHBox.getElement());
+newItemDialog.getContentArea().appendChild(newItemButtonBar.getElement());
+
+//newItemDialog.getContentArea().appendChild(newItemVBox.getElement());
+
+function createFolder()
+{
+	if (fileExists(newItemInput.value))
+	{
+		alert('Name "' + newItemInput.value + '" already exists! Try a different name.');
+		return;
+	}
+
+	var path = currentPath + newItemInput.value;
+	if (newFolder)
+	{
+		path += '?mkdir';
+	}
+
+	req = new XMLHttpRequest();
+	req.open('PUT', path, false);
+	req.send('');
+	if (req.status != 201)
+	{
+		if (req.status == 409)
+		{
+			alert('Name "' + newItemInput.value + '" already exists! Try a different name.');
+			return;
+		}
+		alert('error:' + req.statusText + '(' + req.status + ') ' + req.response);
+	}
+	window.onhashchange();
+
+	newItemDialog.hide();
+};
+
+newItemInput.onkeyup = function (e)
+{
+	if (e.which == 13)
+	{
+		createFolder();
+	}
+};
+newItemOkay.onclick = createFolder;
+
+newItemCancel.onclick = newItemDialog.hide;
+
+function onCreateFolder()
+{
+	newFolder = true;
+	newItemDialog.setTitle("New Folder");
+	newItemInput.value == 'NewFolder';
+	newItemDialog.show();
+}
+
+function onCreateFile()
+{
+	newFolder = false;
+	newItemDialog.setTitle("New File");
+	newItemInput.value == 'NewFile';
+	newItemDialog.show();
+}
+
+//
+
+function onDelete()
+{
+	var selected = fileListView.getSelectedItems();
+	if (selected.length < 1)
+	{
+		return;
+	}
+
+	var message = 'Are you sure you want to delete:\n'
+	for (var i = 0; i < selected.length; i++)
+	{
+		message += selected[i].name + '\n';
+	}
+
+	if (!confirm(message))
+	{
+		return;
+	}
+
+	if (currentPath == 'trashbin')
+	{
+		for (var i = 0; i < selected.length; i++)
+		{
+			console.log('req release of ' + currentPath + selected[i].name);
+			var req = new XMLHttpRequest();
+			req.open('DELETE', selected[i].file + '?release', false);
+			req.send();
+			console.log(req.statusText + ' : ' + req.status + ' : ' + req.response);
+		}
+	}
+	else
+	{
+		for (var i = 0; i < selected.length; i++)
+		{
+			console.log('req deletion of ' + currentPath + selected[i].name);
+			var req = new XMLHttpRequest();
+			req.open('DELETE', currentPath + selected[i].name, false);
+			req.send();
+			console.log(req.statusText + ' : ' + req.status + ' : ' + req.response);
+		}
+	}
+	window.onhashchange();
+}
+
+function onRecover()
+{
+	if (currentPath != 'trashbin')
+	{
+		console.log('not in trashbin');
+		return;
+	}
+
+	var selected = fileListView.getSelectedItems();
+
+	for (var i = 0; i < selected.length; i++)
+	{
+		console.log('req recover of ' + selected[i].name);
+		var req = new XMLHttpRequest();
+		req.open('PUT', currentPath + '/' + selected[i].file + '?recover', false);
+		req.send();
+		console.log(req.statusText + ' : ' + req.status + ' : ' + req.response);
+	}
+	window.onhashchange();
+}
+
+// temp test function
+function echo(text) { return function () { console.log(text); }; };
+
+// build submenus
+var fileMenu = new VMenu();
+fileMenu.appendItem('Create Folder...', onCreateFolder, '');
+fileMenu.appendItem('Create Empty File...', onCreateFile, '');
+fileMenu.appendItem('Upload File', onSelectUploadFiles, '');
+fileMenu.appendSeparator();
+fileMenu.appendItem('<u>E</u>xit', echo('exit'), '');
+
+var editMenu = new VMenu();
+editMenu.appendItem('Rename...', echo('rename'), '');
+editMenu.appendItem('Delete', onDelete, '');
+editMenu.appendItem('Recover', onRecover, '');
+editMenu.appendItem('Cut', echo('cut'), '');
+editMenu.appendItem('Copy', echo('copy'), '');
+editMenu.appendItem('Paste', echo('paste'), '');
+
+var helpMenu = new VMenu();
+helpMenu.appendItem('About...', aboutDialog.show, '');
+
+// build main menu
+var mainMenu = new HMenu();
+mainMenu.appendItem('<u>F</u>ile', fileMenu);
+mainMenu.appendItem('<u>E</u>dit', editMenu);
+mainMenu.appendItem('<u>V</u>iew');
+mainMenu.appendItem('<u>H</u>elp', helpMenu);
+
+// button bar
+var buttonBar = document.createElement('div');
+var buttonHome = document.createElement('button');
+var buttonUp = document.createElement('button');
+var buttonTrashbin = document.createElement('button');
+var buttonUpload = document.createElement('button');
+buttonHome.textContent = 'Home';
+buttonUp.textContent = 'Up';
+buttonTrashbin.textContent = 'Trashbin';
+buttonUpload.textContent = 'Upload';
+buttonBar.appendChild(buttonHome);
+buttonBar.appendChild(buttonUp);
+buttonBar.appendChild(buttonTrashbin);
+buttonBar.appendChild(buttonUpload);
+buttonHome.onclick = function ()
+{
+	location.hash = '/';
+};
+buttonUp.onclick = function ()
+{
+	var path = getPath();
+	if (path == '/' || path == 'trashbin')
+	{
+		return;
+	}
+	path = path.substr(0,path.length - 1);
+	path.lastIndexOf('/');
+	location.hash = path.substr(0, path.lastIndexOf('/') + 1);
+};
+buttonTrashbin.onclick = function ()
+{
+	location.hash = 'trashbin';
+};
+buttonUpload.onclick = onSelectUploadFiles;
+
+
+// file list view
+var headers = [
+	{
+		title:'Name', width:200,
+		create : defaultListCellText('name'),
+		compare : defaultListCellCompare('name')
+	},
+	{
+		title:"Date Modified", width:192,
+		create : function (item)
+		{
+			var date = new Date(item.mtime);
+			return createListCellText(date.toLocaleString());
+		},
+		compare : defaultListCellNumberCompare('mtime')
+	},
+	{
+		title:"Type", width:108,
+		create : defaultListCellText('type'),
+		compare : defaultListCellCompare('type')
+	},
+	{
+		title:"Size", width:128,
+		create : function (item)
+		{
+			if (item.type == 'directory') return undefined;
+			return createListCellText(Math.trunc((item.size + 1023) / 1024) + ' KB', 'right');
+		},
+		compare : defaultListCellNumberCompare('size')
+	},
+];
+function ondblclickItem(index, item)
+{
+	if (item.type == 'directory')
+	{
+		openDir(item.name);
+		return;
+	}
+	openFile(item.name);
+}
+function sortDir(itemA, itemB)
+{
+	if (itemA.type == 'directory' && itemB.type != 'directory') return -1;
+	if (itemA.type != 'directory' && itemB.type == 'directory') return 1;
+	return 0;
+}
+var fileListView = new ListView(headers, ondblclickItem, sortDir);
+
+
+// attach to main window
+var mainVBox = new VBox();
+mainVBox.appendChild(mainMenu);
+mainVBox.appendChild(buttonBar);
+//mainVBox.appendChild(contentDiv, true);
+mainVBox.appendChild(fileListView, true);
+
+// Attach everything to the 'screen'
+var body = document.getElementsByClassName('forscreen')[0];
+body.appendChild(mainVBox.getElement());
+body.appendChild(aboutDialog.getElement());
+body.appendChild(newItemDialog.getElement());
+
+
+function handleFileSelect(e)
+{
+    e.stopPropagation();
+    e.preventDefault();
+
+	uploadFiles(e.dataTransfer.files, 0);
+}
+
+function handleDragOver(e)
+{
+	e.stopPropagation();
+	e.preventDefault();
+	if (currentPath == 'trashbin')
+	{
+		e.dataTransfer.dropEffect = 'none';
+	}
+	else
+	{
+		e.dataTransfer.dropEffect = 'copy';
+	}
+}
+
+window.addEventListener('dragover', handleDragOver, false);
+window.addEventListener('drop', handleFileSelect, false);
+
+window.onhashchange();
+
+</script>
+
+
+
+</body>
+</html>

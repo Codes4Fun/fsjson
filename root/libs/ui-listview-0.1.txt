@@ -1,0 +1,98 @@
+ List View
+
+ Encapsulates a scrollable view of a list of items.
+
+ Features:
+	* columns with headers
+	* sorting by column
+	* multi-item selection
+
+ Missing:
+	* single item selection
+	* maintain select order (the order of selection may be relevant)
+	* keyboard navigation/actions
+	* select-all hotkey (ctrl-a)
+	* column reordering
+	* lots of testing!
+
+ API:
+	* ListView(columns, ondblclick, primarySortCompare) - constructor
+		columns - list of definitions for each column:
+			name - header title
+			width - starting column width
+			create - a function that creates the html element for an item column cell
+			compare - sorts items based upon colum
+		ondblclick - a callback when an item is double clicked, passes item index and the item
+		primarySortCompare - this sort is done before the colum sort.
+
+	* ListView.getElement() - returns html element to add to the document.
+
+	* ListView.clearItems() - removes all items from the list
+
+	* ListView.setItems(items) - sets the items of the list and sorts.
+
+	* ListView.clearSelection() - unselects all items
+	
+	* ListView.select(index) - selects the item with index.
+
+	* ListView.select(start, end) - selects the items in index range, end is inclusive.
+
+	* ListView.select(array) - selects item index in array.
+
+	* ListView.getSelection() - returns an array of indices of selected items.
+
+	* ListView.getSelectedItems() - returns an array of the selected items.
+
+ Example:
+
+	var items = [
+	{'name':"index.html",'mtime':1433198160000,'type':"text/html",'size':1024},
+	{'name':"Program Files (x86)",'mtime':1414835580000,'type':"directory",'size':0},
+	{'name':"vs2013.3_dskexp_ENU.iso",'mtime':1428986220000,'type':"Disk Image",'size':5036505088},
+	{'name':"Manual.pdf",'mtime':1377044820000,'type':"text/pdf",'size':3111996},
+	{'name':"Autorun.inf",'mtime':1377044760000,'type':"Setup Information",'size':1024},
+	];
+
+	var columns = [
+		{
+			title:'Name', width:128,
+			create : defaultListCellText('name'),
+			compare : defaultListCellCompare('name')
+		},
+		{
+			title:"Date Modified", width:128,
+			create : function (item)
+			{
+				var date = new Date(item.mtime);
+				return createListCellText(date.toLocaleString());
+			},
+			compare : defaultListCellNumberCompare('mtime')
+		},
+		{
+			title:"Type", width:108,
+			create : defaultListCellText('type'),
+			compare : defaultListCellCompare('type')
+		},
+		{
+			title:"Size", width:128,
+			create : function (item)
+			{
+				if (item.type == 'directory') return undefined;
+				return createListCellText(Math.trunc((item.size + 1023) / 1024) + ' KB', 'right');
+			},
+			compare : defaultListCellNumberCompare('size')
+		},
+	];
+
+	// separate directory sorting from file sorting
+	function sortDir(itemA, itemB)
+	{
+		if (itemA.type == 'directory' && itemB.type != 'directory') return -1;
+		if (itemA.type != 'directory' && itemB.type == 'directory') return 1;
+		return 0;
+	}
+
+	var list = new ListView(columns, function (index) { console.log(index);}, sortDir);
+	list.getElement().style.width = "640px";
+	list.getElement().style.height = "360px";
+	document.body.appendChild(list.getElement());

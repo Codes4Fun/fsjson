@@ -1,0 +1,62 @@
+.list-row
+{
+	border: 1px rgba(0,0,0,0) solid;
+}
+.list-header-row
+{
+	height: 1.5em;
+	background: white;
+	border-color: white;
+}
+.list-header-home
+{
+	height: 1.5em;
+}
+.list-item-row
+{
+}
+.list-item-row:hover
+{
+	background-color : rgb(229,243,251);
+	border-color : rgb(112,192,231);
+}
+.list-item-row-selected
+{
+	background-color : rgb(209,232,255);
+	border-color : rgb(102,167,232);
+}
+
+.list-header
+{
+	overflow: hidden;
+	min-height: 1px;
+	display: inline-block;
+}
+.list-header:hover
+{
+	background-color: rgb(243,247,253);
+}
+.list-header-text
+{
+	overflow: hidden;
+	text-overflow: ellipsis;
+	padding-left: 0.25em;
+	white-space: nowrap;
+	color: rgb(76,96,122);
+}
+
+.list-cell
+{
+	overflow: hidden;
+	min-height: 1px;
+	display: inline-block;
+}
+.list-cell-text
+{
+	overflow: hidden;
+	text-overflow: ellipsis;
+	height: 1.1em;
+	padding-left: 0.25em;
+	padding-right: 0.25em;
+	white-space: nowrap;
+}

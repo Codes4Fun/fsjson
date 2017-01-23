@@ -1,0 +1,130 @@
+html
+{
+  height: 100%;
+}
+
+.app-body
+{
+  height: 100%;
+  margin:0;
+  background-color:rgb(245,246,247);
+  font-family:sans-serif;
+}
+
+@media screen
+  {
+.forscreen { display:block; height: 100%; }
+.forprinting { display:none; }
+  }
+@media print
+  {
+.forscreen { display:none; }
+.forprinting { display:block; white-space: pre-wrap }
+  }
+
+.menuitem
+{
+  float:left;
+  padding-left:0.5em;
+  padding-right:0.5em;
+  border-color:transparent;
+  border-width:1px;
+  border-style:solid;
+  -webkit-user-select:none;
+  cursor:context-menu;
+}
+.menuitem:hover
+{
+  background-color:rgb(210,238,252);
+  border-color:rgb(165,194,239);
+  border-width:1px;
+  border-style:solid;
+}
+.menuitem-selected
+{
+  float:left;
+  padding-left:0.5em;
+  padding-right:0.5em;
+  -webkit-user-select:none;
+  cursor:context-menu;
+  background-color:rgb(184,216,249);
+  border-color:rgb(98,163,229);
+  border-width:1px;
+  border-style:solid;
+}
+.vmenuitem
+{
+  border-color:transparent;
+  border-width:1px;
+  border-bottom-width:0px;
+  border-style:solid;
+  -webkit-user-select:none;
+  cursor:context-menu;
+  height:1.8em;
+}
+.vmenuitem:hover
+{
+  background-color:rgb(209,226,242);
+  border-color:rgb(120,174,229);
+  border-width:1px;
+  border-style:solid;
+}
+.popupmenu
+{
+  background-color: rgb(240,240,240);
+  box-shadow: 2px 2px 3px rgba(0,0,0,0.5);
+  border-color: rgb(151,151,151);
+  border-style: solid;
+  border-width: 1px;
+  padding:2px;
+}
+.menuseparator
+{
+  border-bottom:1px solid rgba(0,0,0,0.157);
+}
+.menuicon
+{
+  width:1.5em;
+  border-right: 1px solid rgba(0,0,0,0.05);
+}
+.menutext
+{
+  padding-left: 0.5em;
+  padding-right: 2em;
+}
+
+.closebutton
+{
+	background-color:rgb(159,0,0);
+	border:2px rgb(174,74,74) outset;
+	width:1em;
+	text-align:center;
+	color:white;
+	cursor: default;
+}
+
+.closebutton:hover
+{
+	background-color:rgb(200,0,0);
+	border:2px rgb(215,78,78) outset;
+}
+
+.button
+{
+	background-color: #E0E0E0;
+	border:2px white outset;
+	text-align:center;
+	cursor: default;
+}
+
+.button:hover
+{
+	background-color:#F0F0F0;
+}
+
+
+
+td
+{
+  padding:0;
+}

@@ -1,0 +1,53 @@
+SERVER
+DONE:
+GET (with readdir/stat)
+PUT (with mkdir)
+GET return proper content type
+trashbin support to recover deleted files!
+DELETE
+GET with range
+
+TODO:
+respond to conflicts in files (upload, recovery, rename, copy, etc). POST fails, PUT replaces.
+logging
+authentication
+PUT with range
+HEAD (returns resource size date etc)
+GET/readdir/stat with file filters
+consider database query designs in place of GET/readdir/stat
+possible race condition, two separate users writing to the same file.
+------------------------------------
+EXPLORER APP:
+DONE:
+basic navigation
+added menus
+upload files
+drag and drop upload of files
+make directories
+create empty files
+created list widget with selection support
+delete folders/files (trashbin recovery support)
+
+TODO:
+copy/cut/paste folders/files
+rename folders/files
+searches
+fancy it up
+duplicate file options (for paste, rename, create actions)
+------------------------------------
+NOTEPAD APP:
+DONE:
+some menu stuff
+functioning open and saveas dialogs
+
+TODO:
+import/export files
+drag and drop files
+print file
+fancy it up
+------------------------------------
+PAINT APP:
+------------------------------------
+CODE EDITOR APP:
+------------------------------------
+MEDIA PLAYER APP:

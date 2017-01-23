@@ -1,0 +1,14 @@
+
+ UI Menus
+
+
+ Missing:
+	* They don't lose focus properly.
+		Recommend when bringing up a submenu creating a background div that covers the entire 
+		document that when clicked will dismiss/blur the menu, and using z-index to make sure 
+		menus and menu-items float above this background.
+		Note that this is only relevant to submenus and not context-menus.
+	* Hot Keys!
+	* reusable menus that can be both context-menu and sub-menu.
+
+

@@ -1,0 +1,1188 @@
+<html>
+<head>
+<style>
+.app-body
+{
+  margin:0;
+  background-color:rgb(245,246,247);
+  font-family:sans-serif;
+}
+
+@media screen
+  {
+.forscreen { display:block; }
+.forprinting { display:none; }
+  }
+@media print
+  {
+.forscreen { display:none; }
+.forprinting { display:block; white-space: pre-wrap }
+  }
+
+.menuitem
+{
+  float:left;
+  padding-left:0.5em;
+  padding-right:0.5em;
+  border-color:transparent;
+  border-width:1px;
+  border-style:solid;
+  -webkit-user-select:none;
+  cursor:context-menu;
+}
+.menuitem:hover
+{
+  background-color:rgb(210,238,252);
+  border-color:rgb(165,194,239);
+  border-width:1px;
+  border-style:solid;
+}
+.menuitem-selected
+{
+  float:left;
+  padding-left:0.5em;
+  padding-right:0.5em;
+  -webkit-user-select:none;
+  cursor:context-menu;
+  background-color:rgb(184,216,249);
+  border-color:rgb(98,163,229);
+  border-width:1px;
+  border-style:solid;
+}
+.vmenuitem
+{
+  border-color:transparent;
+  border-width:1px;
+  border-bottom-width:0px;
+  border-style:solid;
+  -webkit-user-select:none;
+  cursor:context-menu;
+  height:1.8em;
+}
+.vmenuitem:hover
+{
+  background-color:rgb(209,226,242);
+  border-color:rgb(120,174,229);
+  border-width:1px;
+  border-style:solid;
+}
+.popupmenu
+{
+  background-color: rgb(240,240,240);
+  box-shadow: 2px 2px 3px rgba(0,0,0,0.5);
+  border-color: rgb(151,151,151);
+  border-style: solid;
+  border-width: 1px;
+  padding:2px;
+}
+.menuseparator
+{
+  border-bottom:1px solid rgba(0,0,0,0.157);
+}
+.menuicon
+{
+  width:1.5em;
+  border-right: 1px solid rgba(0,0,0,0.05);
+}
+.menutext
+{
+  padding-left: 0.5em;
+  padding-right: 2em;
+}
+td
+{
+  padding:0;
+}
+
+.closebutton
+{
+	background-color:rgb(159,0,0);
+	border:2px rgb(174,74,74) outset;
+	width:1em;
+	text-align:center;
+	color:white;
+	cursor: default;
+}
+
+.closebutton:hover
+{
+	background-color:rgb(200,0,0);
+	border:2px rgb(215,78,78) outset;
+}
+
+.button
+{
+	background-color: #E0E0E0;
+	border:2px white outset;
+	text-align:center;
+	cursor: default;
+}
+
+.button:hover
+{
+	background-color:#F0F0F0;
+}
+
+</style>
+</head>
+
+<body class="app-body">
+
+<div class="forscreen"></div>
+<div id="printable" class="forprinting"></div>
+
+<script>
+
+///////
+// UI Building tools
+///////
+
+function VBox()
+{
+	var table = document.createElement('table');
+	table.style.cssText = "width:100%;height:100%;table-layout:fixed;border-spacing:0";
+	this.getElement = function () { return table; };
+	
+	var tbody = document.createElement('tbody');
+	table.appendChild(tbody);
+	
+	this.appendChild = function (child, expands)
+	{
+		var tr = document.createElement('tr');
+		tbody.appendChild(tr);
+		
+		var td = document.createElement('td');
+		if (expands)
+		{
+			td.style.cssText = "width: 100%;height: 100%;";
+		}
+		tr.appendChild(td);
+		
+		if (child.getElement)
+		{
+			td.appendChild(child.getElement());
+		}
+		else
+		{
+			td.appendChild(child);
+		}
+	};
+}
+
+function HMenu()
+{
+	var table = document.createElement('table');
+	table.style.cssText = "border-spacing:0";
+	this.getElement = function () { return table; };
+	
+	//table.addEventListener('focus', function () { console.log('got focus'); }, true);
+	//table.addEventListener('blur', function () { console.log('got blur'); }, true);
+	
+	var tbody = document.createElement('tbody');
+	table.appendChild(tbody);
+	
+	var trItems = document.createElement('tr');
+	tbody.appendChild(trItems);
+	
+	var trSubMenus = document.createElement('tr');
+	tbody.appendChild(trSubMenus);
+	
+	var itemFocus = null;
+	var submenuFocus = null;
+	table.addEventListener('blur', function ()
+	{
+		if (itemFocus)
+		{
+			itemFocus.className = 'menuitem';
+			submenuFocus.style.cssText = 'display:none';
+			itemFocus = null;
+			submenuFocus = null;
+		}
+	}, true);
+	
+	this.appendItem = function (name, action)
+	{
+		var tdItem = document.createElement('td');
+		tdItem.className = "menuitem";
+		tdItem.innerHTML = name;
+		trItems.appendChild(tdItem);
+
+		var tdSubMenu = document.createElement('td');
+		trSubMenus.appendChild(tdSubMenu);
+		
+		if (action == undefined)
+			return;
+
+		if (action.constructor == VMenu)
+		{
+			var divPos = document.createElement('div');
+			divPos.style.cssText = 'position:absolute';
+			tdSubMenu.appendChild(divPos);
+			
+			var divStyle = document.createElement('div');
+			divStyle.className = 'popupmenu';
+			divStyle.style.cssText = 'display:none';
+			divPos.appendChild(divStyle);
+			
+			tdItem.tabIndex = 0;
+			tdItem.onclick = (function (tdItem, divStyle)
+			{
+				return function ()
+				{
+					if (divStyle.style.display == 'none')
+					{
+						tdItem.className = 'menuitem-selected';
+						divStyle.style.display = 'block';
+						itemFocus = tdItem;
+						submenuFocus = divStyle;
+					}
+					else
+					{
+						divStyle.style.display = 'none';
+					}
+				}
+			})(tdItem, divStyle);
+
+			divStyle.appendChild(action.getElement());
+		}
+		else if (action.constructor == Function)
+		{
+			tdItem.onclick = action;
+		}
+	};
+}
+
+function VMenu()
+{
+	var table = document.createElement('table');
+	table.style.cssText = "border-spacing:0;border-collapse:collapse";
+	this.getElement = function () { return table; };
+	
+	var tbody = document.createElement('tbody');
+	table.appendChild(tbody);
+	
+	this.appendSeparator = function ()
+	{
+		var tr = document.createElement('tr');
+		tr.style.cssText = 'height:0.5em';
+		tbody.appendChild(tr);
+		
+		var tdIcon = document.createElement('td');
+		tdIcon.className = 'menuicon';
+		tr.appendChild(tdIcon);
+
+		var tdSpan = document.createElement('td');
+		tdSpan.colSpan = 3;
+		tr.appendChild(tdSpan);
+		
+		var div = document.createElement('div');
+		div.className = 'menuseparator';
+		tdSpan.appendChild(div);
+	};
+	
+	this.appendItem = function (name, action, hotkey, icon)
+	{
+		var tr = document.createElement('tr');
+		tr.className = 'vmenuitem';
+		tr.tabIndex = 0;
+		tbody.appendChild(tr);
+		
+		if (typeof(action) == 'function')
+		{
+			tr.onmousedown = action;
+		}
+		
+		var tdIcon = document.createElement('td');
+		tdIcon.className = 'menuicon';
+		if (icon)
+		{
+			tdIcon.appendChild(icon);
+		}
+		tr.appendChild(tdIcon);
+
+		var tdText = document.createElement('td');
+		tdText.className = 'menutext';
+		tdText.innerHTML = name;
+		tr.appendChild(tdText);
+		
+		var tdHotkey = document.createElement('td');
+		tdHotkey.style.cssText = 'float:right';
+		tdHotkey.innerHTML = hotkey;
+		tr.appendChild(tdHotkey);
+		
+		var tdSpacer = document.createElement('td');
+		tdSpacer.style.cssText = 'width:1em';
+		tr.appendChild(tdSpacer);
+	}
+}
+
+function ModalDialog(title, onclose)
+{
+	var background = document.createElement('div');
+	background.style.cssText = "display:none; position:absolute;left:0px;top:0px;right:0px;bottom:0px;background-color:rgba(40,40,40,0.8)";
+	this.getElement = function () { return background; };
+
+	this.show = function ()
+	{
+		background.style.display = "block";
+	};
+	
+	this.hide = function ()
+	{
+		background.style.display = "none";
+		if (onclose) onclose();
+	};
+
+	var dialog = document.createElement('table');
+	dialog.style.cssText = 'position:absolute;background-color:#E0E0E0;border:2px outset;padding:2px;left:50%;top:50%;transform: translate(-50%,-50%);table-layout:fixed';
+	//var dialog = document.createElement('div');
+	//dialog.style.cssText = 'position:absolute;background-color:rgb(245,246,247);border:2px outset;padding:2px;left:50%;top:50%;transform: translate(-50%,-50%)';
+	this.setWidth = function (width)
+	{
+		dialog.style.width = width;
+	};
+	this.setHeight = function (height)
+	{
+		dialog.style.height = height;
+	};
+	this.setSize = function (width, height)
+	{
+		dialog.style.width = width;
+		dialog.style.height = height;
+	};
+	
+	//var dialogTable = document.createElement('table');
+	//var dialogBody = document.createElement('tbody');
+	//dialogTable.appendChild(dialogBody);
+	//dialog.appendChild(dialogTable);
+
+	var dialogBody = document.createElement('tbody');
+	dialog.appendChild(dialogBody);
+
+	var header = document.createElement('table');
+	header.style.cssText = 'width:100%;background-color:#B0B0B0;padding:2px;';
+	var headerBody = document.createElement('tbody');
+	header.appendChild(headerBody);
+	var headerRow = document.createElement('tr');
+	headerBody.appendChild(headerRow);
+	var headerText = document.createElement('td');
+	//headerText.style.cssText = "width:100%";
+	headerText.innerHTML = title;
+	this.setTitle = function (title) { headerText.innerHTML = title; }
+	headerRow.appendChild(headerText);
+	var headerClose = document.createElement('td');
+	headerClose.className = 'closebutton';
+	headerClose.innerHTML = 'x';
+	headerClose.onclick = this.hide;
+	headerRow.appendChild(headerClose);
+	//dialog.appendChild(header);
+	var tr = document.createElement('tr');
+	var td = document.createElement('td');
+	td.appendChild(header);
+	tr.appendChild(td);
+	dialogBody.appendChild(tr);
+
+	//var contentArea = document.createElement('div');
+	//this.getContentArea = function () { return contentArea; }
+	//contentArea.style.cssText = 'padding:8px';
+	//dialog.appendChild(contentArea);
+	var tr = document.createElement('tr');
+	var td = document.createElement('td');
+	var contentArea = td;
+	this.getContentArea = function () { return contentArea; }
+	//contentArea.style.cssText = 'padding:8px';
+	//td.appendChild(contentArea);
+	tr.appendChild(td);
+	dialogBody.appendChild(tr);
+
+	background.appendChild(dialog);
+
+	// experimental, close dialog on background click
+	//background.addEventListener('click', this.hide, false);
+	//dialog.addEventListener('click', function (e) {e.stopPropagation()}, false);
+}
+
+
+
+
+
+///////
+// Open/Save Dialog
+///////
+
+/*var extensions = {'txt' : 'Text files (*.txt)', '*' : 'All files (*)'};
+
+var filters = [
+	{
+		extensions : ['txt', 'html', 'htm', 'js', 'h', 'c', 'cpp', 'md'],
+		filename : ['README', 'CHANGELOG', 'COPYING', 'INSTALL'],
+		text : 'All known files',
+	},
+	{
+		extensions : ['txt'],
+		text : 'Text files (*.txt)',
+	},
+	{
+		text : 'All files (*)',
+	},
+];*/
+
+function FileDialog()
+{
+	var dialog = new ModalDialog("Open");
+	this.getElement = function () { return dialog.getElement(); };
+
+	//dialog.setSize('300px', '300px');
+
+	var layout = new VBox();
+	layout.getElement().style.width = '';
+	layout.getElement().style.borderSpacing = '2px';
+
+	// navigation bar
+	var navBar = document.createElement('table');
+	var navBarBody = document.createElement('tbody');
+	var navBarRow = document.createElement('tr');
+	var navBarUp = document.createElement('td');
+	var navBarBack = document.createElement('td');
+	var navBarForward = document.createElement('td');
+	var navBarLocation = document.createElement('td');
+
+	navBar.style.width = '100%';
+	navBarLocation.style.width = '100%';
+
+	var buttonUp = document.createElement('button');
+	buttonUp.textContent = '^';
+	buttonUp.title = 'up';
+	navBarUp.appendChild(buttonUp);
+
+	var buttonBack = document.createElement('button');
+	buttonBack.textContent = '<';
+	buttonBack.title = 'back';
+	navBarBack.appendChild(buttonBack);
+
+	var buttonForward = document.createElement('button');
+	buttonForward.textContent = '>';
+	buttonForward.title = 'forward';
+	navBarForward.appendChild(buttonForward);
+
+	var navBarInput = document.createElement('input');
+	navBarInput.style.width = '100%';
+	navBarInput.type = 'text';
+	navBarLocation.appendChild(navBarInput);
+
+	navBarRow.appendChild(navBarUp);
+	navBarRow.appendChild(navBarBack);
+	navBarRow.appendChild(navBarForward);
+	navBarRow.appendChild(navBarLocation);
+	navBarBody.appendChild(navBarRow);
+	navBar.appendChild(navBarBody);
+	layout.appendChild(navBar);
+
+	// file list
+	var divFrame = document.createElement('div');
+	divFrame.style.cssText = 'overflow:auto;width:400px;height:300px;border: 2px inset white;background-color:white';
+
+	var table = document.createElement('table');
+	table.style.cssText = 'white-space:nowrap';
+	var fileListBody = document.createElement('tbody');
+
+	for (var i = 0; i < 27; i++)
+	{
+		var tr = document.createElement('tr');
+		fileListBody.appendChild(tr);
+		var td = document.createElement('td');
+		td.innerHTML = 'hello world. the quick brown fox jumped over the sleeping dog.';
+		tr.appendChild(td);
+	}
+
+	table.appendChild(fileListBody);
+	divFrame.appendChild(table);
+
+	layout.appendChild(divFrame);
+
+	// filename bar
+	var fileBar = document.createElement('table');
+	var fileBarBody = document.createElement('tbody');
+	var fileBarRow = document.createElement('tr');
+	var fileBarLabel = document.createElement('td');
+	var fileBarName = document.createElement('td');
+	var fileBarExt = document.createElement('td');
+
+	fileBar.style.whiteSpace = 'nowrap';
+	fileBar.style.width = '100%';
+
+	fileBarLabel.textContent = 'File name:';
+
+	var fileBarInput = document.createElement('input');
+	fileBarInput.style.width = '100%';
+	fileBarInput.type = 'text';
+	fileBarName.appendChild(fileBarInput);
+	fileBarName.style.width = '100%';
+
+	/*
+	var extensions = {'txt' : 'Text files (*.txt)', '*' : 'All files (*)'};
+	var fileBarSelect = document.createElement('select');
+	for (var ext in extensions)
+	{
+		var option = document.createElement('option');
+		option.value = ext;
+		option.textContent = extensions[ext];
+		fileBarSelect.appendChild(option);
+	}
+	fileBarExt.appendChild(fileBarSelect);
+	*/
+
+	fileBarRow.appendChild(fileBarLabel);
+	fileBarRow.appendChild(fileBarName);
+	fileBarRow.appendChild(fileBarExt);
+	fileBarBody.appendChild(fileBarRow);
+	fileBar.appendChild(fileBarBody);
+	layout.appendChild(fileBar);
+
+	// button bar
+	var buttonBar = document.createElement('table');
+	var buttonBarBody = document.createElement('tbody');
+	var buttonBarRow = document.createElement('tr');
+	var buttonBarSpace = document.createElement('td');
+	var buttonBarSelect = document.createElement('td');
+	var buttonBarCancel = document.createElement('td');
+
+	buttonBar.style.width = '100%';
+	buttonBarSpace.style.width = '100%';
+
+	var buttonOkay = document.createElement('button');
+	buttonOkay.textContent = 'Okay';
+	buttonBarSelect.appendChild(buttonOkay);
+
+	var buttonCancel = document.createElement('button');
+	buttonCancel.textContent = 'Cancel';
+	buttonBarCancel.appendChild(buttonCancel);
+
+	buttonBarRow.appendChild(buttonBarSpace);
+	buttonBarRow.appendChild(buttonBarSelect);
+	buttonBarRow.appendChild(buttonBarCancel);
+	buttonBarBody.appendChild(buttonBarRow);
+	buttonBar.appendChild(buttonBarBody);
+	layout.appendChild(buttonBar);
+
+	dialog.getContentArea().appendChild(layout.getElement());
+	
+	var navBarHistory = [];
+	var navBarHistoryIndex = -1;
+	var path = '';
+	var onselect = undefined;
+	var mode;
+	var dir;
+	
+	buttonUp.onclick = function ()
+	{
+		var newpath = path.substr(0,path.substr(0,path.lastIndexOf('/')).lastIndexOf('/')+1);
+		navigate(newpath);
+	}
+
+	buttonBack.onclick = function ()
+	{
+		if (navBarHistoryIndex > 0)
+		{
+			navBarHistoryIndex--;
+			navigate(navBarHistory[navBarHistoryIndex]);
+		}
+	};
+
+	buttonForward.onclick = function ()
+	{
+		if (navBarHistoryIndex < navBarHistory.length)
+		{
+			navBarHistoryIndex++;
+			navigate(navBarHistory[navBarHistoryIndex]);
+		}
+	};
+	
+	navBarInput.onkeyup = function (e)
+	{
+		if (e.which == 13)
+		{
+			navigate(navBarInput.value);
+		}
+	};
+	
+	function select()
+	{
+		var filename = fileBarInput.value;
+		var filepath = path + filename;
+		if (filename[0] == '/')
+		{
+			filepath = filename;
+		}
+		console.log('selected ' + filepath);
+
+		if (filename.lastIndexOf('/') != -1)
+		{
+			if (!navigate(filepath) || fileBarInput.value == '')
+			{
+				return;
+			}
+			filename = fileBarInput.value;
+			filepath = path + filename;
+		}
+
+		var existing = undefined;
+		for (var i in dir)
+		{
+			if (dir[i].name == filename)
+			{
+				existing = dir[i];
+				break;
+			}
+		}
+		if (mode == 'open-file')
+		{
+			if (!existing)
+			{
+				alert('file does not exist!');
+				return;
+			}
+			if (existing.type == 'directory')
+			{
+				alert('cannot open directory!');
+				return;
+			}
+		}
+		else if (mode == 'save-file')
+		{
+			if (existing)
+			{
+				if (existing.type == 'directory')
+				{
+					alert('directory exists with that name');
+					return;
+				}
+				if (!confirm('overwrite existing file?'))
+				{
+					return;
+				}
+			}
+		}
+		
+		if (onselect(filepath))
+		{
+			dialog.hide();
+		}
+	}
+	
+	fileBarInput.onkeyup = function (e)
+	{
+		if (e.which == 13)
+		{
+			select();
+		}
+	};
+	
+	buttonOkay.onclick = function ()
+	{
+		select();
+	};
+	
+	buttonCancel.onclick = function ()
+	{
+		dialog.hide();
+	};
+	
+	function navigate(filepath)
+	{
+		if (filepath == null || filepath == '')
+		{
+			filepath = '/';
+		}
+		
+		console.log('sending request with ' + filepath);
+		req = new XMLHttpRequest();
+		req.open('GET', filepath + '?readdir', false);
+		req.send();
+		if (req.status != 200)
+		{
+			alert('"' + filepath + '" is an invalid path.');
+			return false;
+		}
+		
+		console.log(req.response);
+		res = JSON.parse(req.response);
+		dir = res.contents;
+
+		// if its not a refresh
+		if (path != res.path)
+		{
+			if (navBarHistory[navBarHistoryIndex] != res.path)
+			{
+				navBarHistoryIndex++;
+				navBarHistory[navBarHistoryIndex] = res.path;
+				navBarHistory.length = navBarHistoryIndex + 1;
+			}
+			path = res.path;
+		}
+		buttonUp.disabled = (path == '/');
+		buttonBack.disabled = (navBarHistoryIndex == 0);
+		buttonForward.disabled = (navBarHistoryIndex + 1 == navBarHistory.length);
+
+		fileListBody.innerHTML = '<tr><td>Name</td><td>Date modified</td><td>Type</td><td>Size</td></tr>';
+		for (var i in dir)
+		{
+			var tr = document.createElement('tr');
+
+			var td = document.createElement('td');
+			td.innerHTML = dir[i].name;
+			tr.appendChild(td);
+
+			var mdate = new Date(dir[i].mtime);
+			var td = document.createElement('td');
+			td.innerHTML = mdate.toLocaleString();
+			tr.appendChild(td);
+
+			var td = document.createElement('td');
+			td.innerHTML = dir[i].type;
+			tr.appendChild(td);
+
+			var td = document.createElement('td');
+			if (dir[i].type == 'directory')
+			{
+				tr.ondblclick = (function (path) { return function () { navigate(path); } })(res.path + dir[i].name);
+			}
+			else
+			{
+				tr.onclick = (function (file) { return function () { fileBarInput.value = file; } })(dir[i].name);
+				tr.ondblclick = (function (filepath) { return function () { select(); } })(res.path + dir[i].name);
+				td.innerHTML = dir[i].size;
+			}
+			tr.appendChild(td);
+			fileListBody.appendChild(tr);
+		}
+
+		navBarInput.value = path;
+		fileBarInput.value = res.file;
+		return true;
+	}
+	
+	this.show = function (title, onchoose, filepath, filemode)
+	{
+		buttonBack.disabled = true;
+		buttonForward.disabled = true;
+
+		dialog.setTitle(title);
+		dialog.show();
+
+		navBarHistory = [];
+		navBarHistoryIndex = -1;
+		path = '';
+		onselect = onchoose;
+		mode = filemode;
+		navigate(filepath);
+	};
+}
+
+
+
+
+
+var filepath = '';
+var filemodified = false;
+var textArea = null;
+var fontFamily = 'monospace';
+
+function getFile(fp)
+{
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open( "GET", fp, false );
+    xmlHttp.send();
+    
+    if (xmlHttp.status != 200)
+    {
+		return false;
+	}
+
+	filepath = fp;
+    filemodified = false;
+    textArea.value = xmlHttp.response;
+    return true;
+}
+
+function putFile(fp)
+{
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open( "PUT", fp, false );
+    xmlHttp.send(textArea.value);
+    console.log(xmlHttp.status);
+
+    filepath = fp;
+    filemodified = false;
+
+    return true;
+}
+
+function newFile()
+{
+	if (filemodified && !confirm('Changes not saved, continue anyway?'))
+	{
+		return;
+	}
+	filepath = '';
+	filemodified = false;
+	textArea.value = '';
+}
+
+function openFile()
+{
+	if (filemodified && !confirm('Changes not saved, continue anyway?'))
+	{
+		return;
+	}
+	fileDialog.show('Open text file', getFile, filepath, 'open-file');
+}
+
+function saveFile()
+{
+	if (filepath == '')
+	{
+		saveAsFile();
+		return;
+	}
+	putFile(filepath);
+}
+
+function saveAsFile()
+{
+	fileDialog.show('Save text file as', putFile, filepath, 'save-file');
+}
+
+///////
+// Build the UI
+///////
+
+// About Dialog
+var aboutDialog = new ModalDialog("About fsjson Notepad");
+aboutDialog.getContentArea().style.padding = '8px';
+aboutDialog.getContentArea().textContent = "fsjson Notepad 1.0 [2015-8-16]";
+
+// File Dialog
+var fileDialog = new FileDialog();
+
+// temp test function
+function echo(text) { return function () { console.log(text); }; };
+
+// build submenus
+var fileMenu = new VMenu();
+fileMenu.appendItem('<u>N</u>ew', newFile, 'Ctrl+N');
+fileMenu.appendItem('<u>O</u>pen...', openFile, 'Ctrl+O');
+fileMenu.appendItem('<u>S</u>ave', saveFile, 'Ctrl+S');
+fileMenu.appendItem('Save <u>A</u>s...', saveAsFile, '');
+fileMenu.appendSeparator();
+fileMenu.appendItem('<u>E</u>xit', echo('exit'), '');
+
+var helpMenu = new VMenu();
+helpMenu.appendItem('About...', aboutDialog.show, '');
+
+// build main menu
+var mainMenu = new HMenu();
+mainMenu.appendItem('<u>F</u>ile', fileMenu);
+mainMenu.appendItem('<u>E</u>dit');
+mainMenu.appendItem('<u>V</u>iew');
+mainMenu.appendItem('<u>H</u>elp', helpMenu);
+
+// text area
+textArea = document.createElement('textarea');
+textArea.style.cssText = "width:100%;height:100%;resize:none";
+textArea.onchange = function () { filemodified = true; }
+
+// attach to main window
+var mainVBox = new VBox();
+mainVBox.appendChild(mainMenu);
+mainVBox.appendChild(textArea, true);
+
+// Attach everything to the 'screen'
+var body = document.getElementsByClassName('forscreen')[0];
+body.appendChild(mainVBox.getElement());
+body.appendChild(aboutDialog.getElement());
+body.appendChild(fileDialog.getElement());
+
+/*function loadFile(filepath)
+{
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open( "GET", filepath, false );
+    xmlHttp.send();
+    return xmlHttp.response;
+}
+
+function saveFile(filepath, data)
+{
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open( "PUT", filepath, false );
+    xmlHttp.send(data);
+    console.log(xmlHttp.status);
+    return xmlHttp.status;
+}*/
+
+if (window.location.hash.length > 1)
+{
+	getFile(window.location.hash.substr(1));
+}
+
+
+
+/*var ops = {};
+
+function createOp(name, title, description, f)
+{
+  f.title = title;
+  f.description = description;
+  ops[name] = f;
+}
+
+createOp('new', "New", "Creates new document", function ()
+{
+  if (confirm("Save Changes?"))
+  {
+    ops.save();
+  }
+  text.select();
+  text.setRangeText('');
+});
+  
+createOp('open', "Open...", "Open existing document file.", function ()
+{
+  alert("TODO");
+});
+
+createOp('save', "Save", "Save document to file.", function ()
+{
+  if (!filepath || filepath.length < 1)
+  {
+    ops.saveas();
+    return;
+  }
+  saveFile(filepath, text.value);
+});
+
+createOp('saveas', "Save As...", "Save document to new file.", function ()
+{
+  alert("TODO");
+});
+
+createOp('print', "Print...", "Print document.", function ()
+{
+  //alert("TODO");
+  var printable = document.getElementById('printable');
+  printable.style.fontFamily = fontFamily;
+  printable.textContent = text.value;
+  print();
+});
+
+createOp('exit', "Exit", "Exit the application.", function ()
+{
+  alert("TODO");
+});
+
+createOp('delete', 'Delete', 'Delete selected text.', function ()
+{
+  text.setRangeText('');
+});
+
+createOp('find', 'Find...', 'Search document.', function ()
+{
+  alert("TODO");
+});
+
+createOp('findNext', 'Find Next', 'Continue search in document.', function ()
+{
+  alert("TODO");
+});
+
+createOp('replace', 'Replace...', 'Find and replace text.', function ()
+{
+  alert("TODO");
+});
+
+function lineCount()
+{
+  //var lines = text.value.split('\n').length;
+  var c = 0;
+  var lines;
+  for (lines = 0; c != -1; lines++)
+  {
+    c = text.value.indexOf('\n', c+1);
+    if (c == -1)
+    {
+      lines++;
+      break;
+    }
+  }
+  return lines;
+}
+
+createOp('goto', 'Go To...', 'Go to line in document.', function ()
+{
+  var line = prompt("Go to line number", "0");
+  if (line == null)
+  {
+    return;
+  }
+  line = parseInt(line);
+  //var lines = lineCount();
+
+  var c = 0;
+  var lines;
+  var lineStart = 0;
+  var lineEnd = 0;
+  for (lines = 0; c != -1; lines++)
+  {
+    if (lines == line)
+    {
+      lineStart = c + 1;
+    }
+    c = text.value.indexOf('\n', c+1);
+    if (c == -1)
+    {
+      lines++;
+      break;
+    }
+    if (lines == line)
+    {
+      lineEnd = c + 1;
+    }
+  }
+  if (lineEnd < lineStart) lineEnd = text.value.length;
+
+  text.setSelectionRange(lineStart, lineEnd);
+  text.scrollTop = text.scrollHeight * line / lines;
+});
+
+createOp('selectAll', 'Select All', 'Select all lines in document.', function ()
+{
+  text.select();
+});
+
+createOp('timeDate', 'Time/Date', 'Set time/date.', function ()
+{
+  alert("TODO");
+});
+
+createOp('wordWrap', 'Word Wrap', 'Toggle word wrap enabled.', function ()
+{
+  if (!text.wrap || text.wrap == 'on')
+  {
+    text.wrap="off";
+  }
+  else
+  {
+    text.wrap="on";
+  }
+});
+
+createOp('font', 'Font...', 'Set font to display documents with.', function ()
+{
+  alert("TODO");
+});
+
+createOp('statusBar', 'Status Bar', 'Toggle display of status bar.', function ()
+{
+  alert("TODO");
+});
+
+createOp('viewHelp', 'View Help', 'Display help document.', function ()
+{
+  alert("TODO");
+});
+
+createOp('about', 'About', 'About this program.', function ()
+{
+  alert("Notepad\n\n Version 0.9, 2015");
+});
+
+var commands =
+[
+{name:"New", description:"", active:true, icon:null, callback:null, hotkey:{ctrlKey:true, which:78}},
+{name:"Open...", description:"", active:true, icon:null, callback:null, hotkey:{ctrlKey:true, which:79}},
+{name:"Save", description:"", active:true, icon:null, callback:null, hotkey:{ctrlKey:true, which:83}},
+{name:"Save As...", description:"", active:true, icon:null, callback:null, hotkey:null},
+{name:"Print...", description:"", active:false, icon:null, callback:null, hotkey:{ctrlKey:true, which:80}},
+{name:"Exit", description:"", active:false, icon:null, callback:null, hotkey:{ctrlKey:true, which:87}},
+
+{name:"Undo", description:"", active:false, icon:null, callback:null, hotkey:{ctrlKey:true, which:90}},
+{name:"Cut", description:"", active:false, icon:null, callback:null, hotkey:{ctrlKey:true, which:88}},
+{name:"Copy", description:"", active:false, icon:null, callback:null, hotkey:{ctrlKey:true, which:67}},
+{name:"Paste", description:"", active:false, icon:null, callback:null, hotkey:{ctrlKey:true, which:86}},
+{name:"Delete", description:"", active:true, icon:null, callback:null, hotkey:{ctrlKey:false, which:46}},
+{name:"Find...", description:"", active:true, icon:null, callback:null, hotkey:{ctrlKey:true, which:70}},
+{name:"Find Next", description:"", active:true, icon:null, callback:null, hotkey:{ctrlKey:false, which:114}},
+{name:"Replace...", description:"", active:true, icon:null, callback:null, hotkey:{ctrlKey:true, which:72}},
+{name:"Go To...", description:"", active:true, icon:null, callback:null, hotkey:{ctrlKey:true, which:71}},
+{name:"Select All", description:"", active:true, icon:null, callback:null, hotkey:{ctrlKey:true, which:65}},
+{name:"Time/Date", description:"", active:true, icon:null, callback:null, hotkey:{ctrlKey:false, which:116}},
+
+{name:"Word Wrap", description:"", active:true, icon:null, callback:null, hotkey:null},
+{name:"Font...", description:"", active:true, icon:null, callback:null, hotkey:null},
+
+{name:"Status Bar", description:"", active:false, icon:null, callback:null, hotkey:null},
+
+{name:"View Help", description:"", active:true, icon:null, callback:null, hotkey:null},
+{name:"About", description:"", active:true, icon:null, callback:null, hotkey:null}
+];
+*/
+/*
+var menu =
+{
+  "File":
+  {
+    altKey: 0,
+    items :
+    {
+      "New": {altKey: 0, onActivate: onNew},
+      "Open...": {altKey: 0, onActivate: onOpen},
+      "Save": {altKey: 0, onActivate: onSave},
+      "Save As...": {altKey: 5, onActivate: onSaveAs},
+      "Exit": {altKey: 0, onActivate: onExit}
+    } 
+  },
+  "Edit":
+  {
+    altKey: 0,
+    items :
+    {
+      "Undo": {altKey: 0, onActivate: onNew},
+      "Open...": {altKey: 0, onActivate: onOpen},
+      "Save": {altKey: 0, onActivate: onSave},
+      "Save As...": {altKey: 5, onActivate: onSaveAs},
+      "Exit": {altKey: 0, onActivate: onExit}
+    } 
+  },
+  "Format":
+  {
+    altKey: 1,
+  },
+  "View":
+  {
+    altKey: 0,
+  },
+  "Help":
+  {
+    altKey: 0,
+  }
+};
+*/
+
+
+
+
+window.addEventListener('keydown', function (e) {
+  if (e.which == 83 && e.ctrlKey)
+  {
+    e.preventDefault();
+    saveFile(filepath, text.value);
+  }
+  if (e.which == 70 && e.altKey)
+  {
+    e.preventDefault();
+  }
+}, true);
+
+</script>
+</body>
+</html>

@@ -207,12 +207,37 @@ function respondConflict(response, message)
 	response.end(message);
 }
 
-function handleFileLoad(response, pathname, start, end)
+function respondDir(response, subpath, dirstat)
+{
+	var page = "<html><body>" + subpath + '<br>';
+	for (var i = 0; i < dirstat.length; i++)
+	{
+		var name = dirstat[i].name;
+		page += '<a href="' + name + '">' + name + '</a><br>';
+	}
+	page += '</body></html>'
+
+	response.writeHead(200, {'Content-Type': 'text/html' });
+	response.end(page);
+}
+
+function handleFileLoad(response, pathname, stat, start, end)
 {
 	//console.log(ext.getExt(pathname));
 	//console.log(ext.getContentType(ext.getExt(pathname)));
+	var headers = {
+		'Content-Type': getContentType(getExt(pathname))
+	};
+	if (stat)
+	{
+		headers['Content-Length'] = stat.size;
+		if (start && end)
+		{
+			headers['Content-Range'] = start + '-' + end + '/' + stat.size;
+		}
+	}
 	var rs = fs.createReadStream(pathname, { start : start, end : end });
-	response.writeHead(200, {'Content-Type': getContentType(getExt(pathname))});
+	response.writeHead(200, headers);
 	rs.on('data', function (chunk) {
 		if(!response.write(chunk)){
 			rs.pause();
@@ -276,6 +301,7 @@ module.exports.respondRedirect = respondRedirect;
 module.exports.respondBadRequest = respondBadRequest;
 module.exports.respondNotFound = respondNotFound;
 module.exports.respondConflict = respondConflict;
+module.exports.respondDir = respondDir;
 module.exports.handleFileLoad = handleFileLoad;
 module.exports.handleFileSave = handleFileSave;
 

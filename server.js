@@ -204,7 +204,14 @@ var server = http.createServer(function (req, res)
 		// return the directory content
 		if (dirstat)
 		{
+			if (queryReaddir)
+			{
 			fsjson.respondDir(res, subpath, filename, dirstat);
+			}
+			else
+			{
+				stdhttp.respondDir(res, subpath, dirstat);
+			}
 			return;
 		}
 
@@ -220,7 +227,7 @@ var server = http.createServer(function (req, res)
 				end = parseInt(values[1]);
 			}
 		}
-		stdhttp.handleFileLoad(res, pathname, start, end);
+		stdhttp.handleFileLoad(res, pathname, stat, start, end);
 		return;
 	}
 	else if (req.method == 'DELETE')

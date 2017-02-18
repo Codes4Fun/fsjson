@@ -130,9 +130,10 @@ var server = http.createServer(function (req, res)
 			return;
 		}
 
+		var stat;
 		try
 		{
-			var stat = fs.statSync(pathname);
+			stat = fs.statSync(pathname);
 		}
 		catch (e)
 		{
@@ -141,7 +142,6 @@ var server = http.createServer(function (req, res)
 		}
 
 		var queryReaddir = (urlObj.query['readdir'] != undefined);
-		console.log('queryReaddir ', queryReaddir);
 		dirstat = undefined;
 
 		if (stat.isDirectory())
@@ -169,6 +169,15 @@ var server = http.createServer(function (req, res)
 					subpath += index;
 					pathname = config.root + subpath;
 					dirstat = undefined;
+					try
+					{
+						stat = fs.statSync(pathname);
+					}
+					catch (e)
+					{
+						stdhttp.respondNotFound(res);
+						return;
+					}
 				}
 			}
 		}
@@ -206,7 +215,7 @@ var server = http.createServer(function (req, res)
 		{
 			if (queryReaddir)
 			{
-			fsjson.respondDir(res, subpath, filename, dirstat);
+				fsjson.respondDir(res, subpath, filename, dirstat);
 			}
 			else
 			{
